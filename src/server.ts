@@ -1,5 +1,16 @@
 import fastify from "fastify";
-import crypto from "node:crypto";
+import { fastifySwagger } from "@fastify/swagger";
+import scalarAPIReference from "@scalar/fastify-api-reference";
+import {
+  validatorCompiler,
+  serializerCompiler,
+  type ZodTypeProvider,
+  jsonSchemaTransform,
+} from "fastify-type-provider-zod";
+import { createCourseRoute } from "./routes/create-course.ts";
+import { getCourses } from "./routes/get-courses.ts";
+import { getCourseByIdRoute } from "./routes/get-course-by-id.ts";
+import { deleteCourseByIdRoute } from "./routes/delete-course-by-id.ts";
 
 const app = fastify({
   logger: {
@@ -11,64 +22,32 @@ const app = fastify({
       },
     },
   },
-});
+}).withTypeProvider<ZodTypeProvider>();
 
-const courses = [
-  { id: "1", title: "Node.js Basics" },
-  { id: "2", title: "Advanced Node.js" },
-  { id: "3", title: "Node.js for Beginners" },
-];
+if (process.env.NODE_ENV === "development") {
+  app.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: "Curso de NodeJS 2025",
+        description: "API REST criada no curso de NodeJS 2025",
+        version: "1.0.0",
+      },
+    },
+    transform: jsonSchemaTransform,
+  });
 
-app.get("/courses", () => {
-  return { courses };
-});
+  app.register(scalarAPIReference, {
+    routePrefix: "/docs",
+  });
+}
 
-app.get("/courses/:id", (request, replay) => {
-  type Params = {
-    id: string;
-  };
-  const params = request.params as Params;
-  const courseId = params.id;
-  const course = courses.find((course) => course.id === courseId);
+app.setSerializerCompiler(serializerCompiler);
+app.setValidatorCompiler(validatorCompiler);
 
-  if (!course) {
-    return replay.status(404).send({ error: "Course not found" });
-  }
-  return { course };
-});
-
-app.delete("/courses/:id", (request, replay) => {
-  type Params = {
-    id: string;
-  };
-  const params = request.params as Params;
-  const courseId = params.id;
-  const courseIndex = courses.findIndex((course) => course.id === courseId);
-
-  if (courseIndex === -1) {
-    return replay.status(404).send({ error: "Course not found" });
-  }
-  courses.splice(courseIndex, 1);
-  return replay.status(204).send();
-});
-
-app.post("/courses", (request, replay) => {
-  type Body = {
-    title: string;
-  };
-
-  const body = request.body as Body;
-  const courseTitle = body.title;
-  const courseId = crypto.randomUUID();
-
-  if (!courseTitle) {
-    return replay.status(400).send({ error: "Title is required" });
-  }
-
-  courses.push({ id: courseId, title: courseTitle });
-
-  return replay.status(201).send({ courseId });
-});
+app.register(createCourseRoute);
+app.register(getCourses);
+app.register(getCourseByIdRoute);
+app.register(deleteCourseByIdRoute);
 
 app.listen({ port: 3333 }).then(() => {
   console.log("Server running on http://localhost:3333");

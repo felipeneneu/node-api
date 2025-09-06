@@ -2,14 +2,14 @@ POST http://localhost:3333/courses
 Content-Type: application/json
 
 {
-  "title": "Curso de Fastify"
+  "title": "Curso de NodeJS 2025"
 }
 
 ###
 GET http://localhost:3333/courses
 
 ###
-GET http://localhost:3333/courses/1
+GET http://localhost:3333/courses/4f917be9-ff12-47bb-81a4-a3705f94619a
 
 ###
-DELETE http://localhost:3333/courses/13667a27-a0ff-495a-a617-a64681ee0b2b
+DELETE http://localhost:3333/courses/4f917be9-ff12-47bb-81a4-a3705f94619a
